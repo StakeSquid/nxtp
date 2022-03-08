@@ -7,6 +7,7 @@ import {
   ChainData,
   getMainnetEquivalent,
   getHardcodedGasLimits,
+  getDomainFromChainId,
 } from "@connext/nxtp-utils";
 
 import { TransactionServiceConfig, validateTransactionServiceConfig, ChainConfig } from "./config";
@@ -376,11 +377,17 @@ export class ChainReader {
     const assetIdOnMainnet = await getMainnetEquivalent(chainId, assetId, chainData);
     const chainIdForTokenPrice = assetIdOnMainnet ? 1 : chainId;
     const chainIdForGasPrice = chainId;
+
     const assetIdForTokenPrice = assetIdOnMainnet ? assetIdOnMainnet : assetId;
 
     const nativeAssetIdOnMainnet = await getMainnetEquivalent(chainId, constants.AddressZero, chainData);
     const nativeChainIdForTokenPrice = nativeAssetIdOnMainnet ? 1 : chainId;
     const nativeAssetIdForTokenPrice = nativeAssetIdOnMainnet || constants.AddressZero;
+
+    const domainForGasPrice = await getDomainFromChainId(chainId, chainData);
+    const domainForTokenPrice = await getDomainFromChainId(chainIdForTokenPrice, chainData);
+    const domainForNativeTokenPrice = await getDomainFromChainId(nativeChainIdForTokenPrice, chainData);
+    const mainnetDomain = await getDomainFromChainId(1, chainData);
 
     if (
       !CHAINS_WITH_PRICE_ORACLES.includes(chainIdForTokenPrice) ||
@@ -392,9 +399,9 @@ export class ChainReader {
     // Use Ethereum mainnet's price oracle for token reference if no price oracle is present
     // on the specified chain.
     const [ethPrice, tokenPrice, gasPrice] = await Promise.all([
-      this.getTokenPrice(nativeChainIdForTokenPrice, nativeAssetIdForTokenPrice),
-      this.getTokenPrice(chainIdForTokenPrice, assetIdForTokenPrice),
-      this.getGasPrice(chainIdForGasPrice, requestContext),
+      this.getTokenPrice(domainForNativeTokenPrice, nativeAssetIdForTokenPrice),
+      this.getTokenPrice(domainForTokenPrice, assetIdForTokenPrice),
+      this.getGasPrice(domainForGasPrice, requestContext),
     ]);
 
     const gasLimits = await getHardcodedGasLimits(chainId, chainData);
@@ -402,7 +409,7 @@ export class ChainReader {
     // https://community.optimism.io/docs/users/fees-2.0.html#fees-in-a-nutshell
     let l1GasInUsd = BigNumber.from(0);
     if (chainIdForGasPrice === 10) {
-      const gasPriceMainnet = await this.getGasPrice(1, requestContext);
+      const gasPriceMainnet = await this.getGasPrice(mainnetDomain, requestContext);
       let gasEstimate = "0";
       if (method === "prepare") {
         gasEstimate = gasLimits.prepareL1 ?? "0";
