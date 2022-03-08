@@ -2,7 +2,7 @@ import { Logger } from "@connext/nxtp-utils";
 import { BigNumber, BigNumberish, providers } from "ethers";
 
 export type ReadTransaction = {
-  chainId: number;
+  domain: string;
   to: string;
   data: string;
 };

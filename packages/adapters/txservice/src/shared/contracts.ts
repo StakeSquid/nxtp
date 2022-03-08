@@ -57,4 +57,5 @@ export const getDeployedPriceOracleContract = (chainId: number): { address: stri
  * @returns An ethers Interface object initialized with the Connext Price
  * Oracle ABI.
  */
-export const getPriceOracleInterface = () => new utils.Interface(PriceOracleArtifact.abi) as TConnextPriceOracle["interface"];
+export const getPriceOracleInterface = () =>
+  new utils.Interface(PriceOracleArtifact.abi) as TConnextPriceOracle["interface"];

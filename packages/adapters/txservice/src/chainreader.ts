@@ -33,7 +33,7 @@ export const cachedPriceMap: Map<string, { timestamp: number; price: BigNumber }
  * @classdesc Performs onchain reads with embedded retries.
  */
 export class ChainReader {
-  protected providers: Map<number, RpcProviderAggregator> = new Map();
+  protected providers: Map<string, RpcProviderAggregator> = new Map();
   protected readonly config: TransactionServiceConfig;
 
   /**
@@ -61,7 +61,7 @@ export class ChainReader {
    * Create a non-state changing contract call. Returns hexdata that needs to be decoded.
    *
    * @param tx - ReadTransaction to create contract call
-   * @param tx.chainId - Chain to read transaction on
+   * @param tx.domain - Domain to read transaction on
    * @param tx.to - Address to execute read on
    * @param tx.data - Calldata to send
    * @param blockTag - (optional) Block tag to query, defaults to latest
@@ -69,14 +69,14 @@ export class ChainReader {
    * @returns Encoded hexdata representing result of the read from the chain.
    */
   public async readTx(tx: ReadTransaction, blockTag: providers.BlockTag = "latest"): Promise<string> {
-    return await this.getProvider(tx.chainId).readContract(tx, blockTag);
+    return await this.getProvider(tx.domain).readContract(tx, blockTag);
   }
 
   /**
-   * Gets the asset balance for a specified address for the specified chain. Optionally pass in the
+   * Gets the asset balance for a specified address for the specified domain. Optionally pass in the
    * assetId; by default, gets the native asset.
    *
-   * @param chainId - The ID of the chain for which this call is related.
+   * @param domain - The domain of the network for which this call is related.
    * @param address - The hexadecimal string address whose balance we are getting.
    * @param assetId (default = ETH) - The ID (address) of the asset whose balance we are getting.
    * @param abi - The ABI of the token contract to use for interfacing with it, if applicable (non-native).
@@ -86,76 +86,76 @@ export class ChainReader {
    * specified address.
    */
   public async getBalance(
-    chainId: number,
+    domain: string,
     address: string,
     assetId = constants.AddressZero,
     abi?: string[],
   ): Promise<BigNumber> {
-    return await this.getProvider(chainId).getBalance(address, assetId, abi);
+    return await this.getProvider(domain).getBalance(address, assetId, abi);
   }
   /**
-   * Get the current gas price for the chain for which this instance is servicing.
+   * Get the current gas price for the domain for which this instance is servicing.
    *
-   * @param chainId - The ID of the chain for which this call is related.
+   * @param domain - The domain of the network for which this call is related.
    * @param requestContext - The request context.
    * @returns BigNumber representing the current gas price.
    */
-  public async getGasPrice(chainId: number, requestContext: RequestContext): Promise<BigNumber> {
-    return await this.getProvider(chainId).getGasPrice(requestContext);
+  public async getGasPrice(domain: string, requestContext: RequestContext): Promise<BigNumber> {
+    return await this.getProvider(domain).getGasPrice(requestContext);
   }
 
   /**
-   * Gets the decimals for an asset by chainId
+   * Gets the decimals for an asset by domain
    *
-   * @param chainId - The ID of the chain for which this call is related.
+   * @param domain - The domain of the network for which this call is related.
    * @param assetId - The hexadecimal string address whose decimals we are getting.
    * @returns number representing the decimals of the asset
    */
-  public async getDecimalsForAsset(chainId: number, assetId: string): Promise<number> {
-    return await this.getProvider(chainId).getDecimalsForAsset(assetId);
+  public async getDecimalsForAsset(domain: string, assetId: string): Promise<number> {
+    return await this.getProvider(domain).getDecimalsForAsset(assetId);
   }
 
   /**
    * Gets a block
    *
-   * @param chainId - The ID of the chain for which this call is related.
+   * @param domain - The domain of the network for which this call is related.
    * @returns block representing the specified
    */
   public async getBlock(
-    chainId: number,
+    domain: string,
     blockHashOrBlockTag: providers.BlockTag | Promise<providers.BlockTag>,
   ): Promise<providers.Block | undefined> {
-    return await this.getProvider(chainId).getBlock(blockHashOrBlockTag);
+    return await this.getProvider(domain).getBlock(blockHashOrBlockTag);
   }
 
   /**
    * Gets the current blocktime
    *
-   * @param chainId - The ID of the chain for which this call is related.
+   * @param domain - The ID of the network for which this call is related.
    * @returns number representing the current blocktime
    */
-  public async getBlockTime(chainId: number): Promise<number> {
-    return await this.getProvider(chainId).getBlockTime();
+  public async getBlockTime(domain: string): Promise<number> {
+    return await this.getProvider(domain).getBlockTime();
   }
 
   /**
    * Gets the current block number
    *
-   * @param chainId - The ID of the chain for which this call is related.
+   * @param domain - The ID of the network for which this call is related.
    * @returns number representing the current block
    */
-  public async getBlockNumber(chainId: number): Promise<number> {
-    return await this.getProvider(chainId).getBlockNumber();
+  public async getBlockNumber(domain: string): Promise<number> {
+    return await this.getProvider(domain).getBlockNumber();
   }
 
   /**
    * Gets a trsanction receipt by hash
    *
-   * @param chainId - The ID of the chain for which this call is related.
+   * @param domain - The ID of the network for which this call is related.
    * @returns number representing the current blocktime
    */
-  public async getTransactionReceipt(chainId: number, hash: string): Promise<providers.TransactionReceipt> {
-    return await this.getProvider(chainId).getTransactionReceipt(hash);
+  public async getTransactionReceipt(domain: string, hash: string): Promise<providers.TransactionReceipt> {
+    return await this.getProvider(domain).getTransactionReceipt(hash);
   }
 
   /**
@@ -166,39 +166,39 @@ export class ChainReader {
    *
    * @returns Hexcode string representation of contract code.
    */
-  public async getCode(chainId: number, address: string): Promise<string> {
-    return await this.getProvider(chainId).getCode(address);
+  public async getCode(domain: string, address: string): Promise<string> {
+    return await this.getProvider(domain).getCode(address);
   }
 
   /**
-   * Checks estimate for gas limit for given transaction on given chain.
+   * Checks estimate for gas limit for given transaction on given domain.
    *
-   * @param chainId - chain on which the transaction is intended to be executed.
+   * @param domain - domain on which the transaction is intended to be executed.
    * @param tx - transaction to check gas limit for.
    *
    * @returns BigNumber representing the estimated gas limit in gas units.
    * @throws Error if the transaction is invalid, or would be reverted onchain.
    */
-  public async getGasEstimate(chainId: number, tx: ReadTransaction | WriteTransaction): Promise<BigNumber> {
-    return await this.getProvider(chainId).getGasEstimate(tx);
+  public async getGasEstimate(domain: string, tx: ReadTransaction | WriteTransaction): Promise<BigNumber> {
+    return await this.getProvider(domain).getGasEstimate(tx);
   }
 
   /// CONTRACT READ METHODS
   /**
    * Gets token price in usd from cache or price oracle
    *
-   * @param chainId - The network identifier.
+   * @param domain - The network identifier.
    * @param assetId - The asset address to get price for.
    */
   public async getTokenPrice(
-    chainId: number,
+    domain: string,
     assetId: string,
     blockTag: providers.BlockTag = "latest",
     _requestContext?: RequestContext,
   ): Promise<BigNumber> {
     const { requestContext } = createLoggingContext(this.getTokenPrice.name, _requestContext);
 
-    const cachedPriceKey = chainId.toString().concat("-").concat(assetId).concat(blockTag.toString());
+    const cachedPriceKey = domain.concat("-").concat(assetId).concat(blockTag.toString());
     const cachedTokenPrice = cachedPriceMap.get(cachedPriceKey);
     const curTimeInSecs = await getNtpTimeSeconds();
 
@@ -207,7 +207,7 @@ export class ChainReader {
       return cachedTokenPrice.price;
     }
 
-    const tokenPrice = await this.getTokenPriceFromOnChain(chainId, assetId, blockTag, requestContext);
+    const tokenPrice = await this.getTokenPriceFromOnChain(domain, assetId, blockTag, requestContext);
     cachedPriceMap.set(cachedPriceKey, { timestamp: curTimeInSecs, price: tokenPrice });
     return tokenPrice;
   }
@@ -215,19 +215,19 @@ export class ChainReader {
   /**
    * Gets token price in usd from price oracle
    *
-   * @param chainId - The network identifier.
+   * @param domain - The network identifier.
    * @param assetId - The asset address to get price for.
    */
   public async getTokenPriceFromOnChain(
-    chainId: number,
+    domain: string,
     assetId: string,
     blockTag: providers.BlockTag = "latest",
     _requestContext?: RequestContext,
   ): Promise<BigNumber> {
     const { requestContext } = createLoggingContext(this.getTokenPriceFromOnChain.name, _requestContext);
-    const priceOracleContract = getDeployedPriceOracleContract(chainId);
+    const priceOracleContract = getDeployedPriceOracleContract(domain);
     if (!priceOracleContract || !priceOracleContract.address) {
-      throw new ChainNotSupported(chainId.toString(), requestContext);
+      throw new ChainNotSupported(domain, requestContext);
     }
     const encodedTokenPriceData = getPriceOracleInterface().encodeFunctionData("getTokenPrice", [assetId]);
     const tokenPrice = await this.readTx(
@@ -479,27 +479,26 @@ export class ChainReader {
   /**
    * Helper to check for chain support gently.
    *
-   * @param chainId - chainID of the chain to check
-   * @returns boolean indicating whether chain of chainID is supported by the service
+   * @param domain - domain of the chain to check
+   * @returns boolean indicating whether network of domain is supported by the service
    */
-  public isSupportedChain(chainId: number): boolean {
-    return this.providers.has(chainId);
+  public isSupportedChain(domain: string): boolean {
+    return this.providers.has(domain);
   }
 
   /// HELPERS
   /**
-   * Helper to wrap getting provider for specified chain ID.
-   * @param chainId The ID of the chain for which we want a provider.
-   * @returns The ChainRpcProvider for that chain.
-   * @throws TransactionError.reasons.ProviderNotFound if provider is not configured for
-   * that ID.
+   * Helper to wrap getting provider for specified domain.
+   * @param domain The ID of the network for which we want a provider.
+   * @returns The ChainRpcProvider for that domain.
+   * @throws TransactionError.reasons.ProviderNotFound if provider is not configured for domain
    */
-  protected getProvider(chainId: number): RpcProviderAggregator {
-    // Ensure that a signer, provider, etc are present to execute on this chainId.
-    if (!this.providers.has(chainId)) {
-      throw new ProviderNotConfigured(chainId.toString());
+  protected getProvider(domain: string): RpcProviderAggregator {
+    // Ensure that a signer, provider, etc are present to execute on this domain.
+    if (!this.providers.has(domain)) {
+      throw new ProviderNotConfigured(domain);
     }
-    return this.providers.get(chainId)!;
+    return this.providers.get(domain)!;
   }
 
   /**
