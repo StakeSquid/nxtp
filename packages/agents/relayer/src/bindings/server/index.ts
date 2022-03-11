@@ -14,7 +14,7 @@ export const bindServer = (context: AppContext) =>
       return res.code(200).send("pong\n");
     });
 
-    server.post("/send", {}, async (request, response) => {
+    server.post("/bid", {}, async (request, response) => {
       try {
         const { requestContext } = createLoggingContext("/bid endpoint");
         const { body: req } = request;
