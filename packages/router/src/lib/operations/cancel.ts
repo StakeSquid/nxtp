@@ -155,7 +155,7 @@ export const cancel = async (
       signature,
       routerRelayerFeeAsset,
       routerRelayerFee.toString(),
-      true,
+      config.chainConfig[cancelChain].useRelayer,
       requestContext,
     );
   } else {

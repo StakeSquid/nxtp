@@ -104,7 +104,7 @@ export const fulfill = async (
       signature,
       routerRelayerFeeAsset,
       routerRelayerFee.toString(),
-      true,
+      config.chainConfig[invariantData.sendingChainId].useRelayer,
       requestContext,
     );
   } else {

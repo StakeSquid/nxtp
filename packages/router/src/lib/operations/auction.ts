@@ -269,9 +269,12 @@ export const newAuction = async (
     !config.chainConfig[receivingChainId].routerContractRelayerAsset ||
     config.chainConfig[receivingChainId].routerContractRelayerAsset === constants.AddressZero;
 
+  const sendingGasPayer = sendingConfig.useRelayer ? routerAddress : wallet.address ?? (await wallet.getAddress());
+  const receivingGasPayer = receivingConfig.useRelayer ? routerAddress : wallet.address ?? (await wallet.getAddress());
+
   const [senderBalance, receiverBalance] = await Promise.all([
-    checkSender ? txService.getBalance(sendingChainId, routerAddress) : BigNumber.from(sendingConfig.minGas),
-    checkReceiver ? txService.getBalance(receivingChainId, routerAddress) : BigNumber.from(receivingConfig.minGas),
+    checkSender ? txService.getBalance(sendingChainId, sendingGasPayer) : BigNumber.from(sendingConfig.minGas),
+    checkReceiver ? txService.getBalance(receivingChainId, receivingGasPayer) : BigNumber.from(receivingConfig.minGas),
   ]);
   logger.debug("Got balances", requestContext, methodContext, {
     senderBalance: senderBalance.toString(),

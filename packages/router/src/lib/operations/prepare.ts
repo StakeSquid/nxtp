@@ -263,7 +263,7 @@ export const prepare = async (
       signature,
       routerRelayerFeeAsset,
       routerRelayerFee.toString(),
-      true,
+      config.chainConfig[invariantData.receivingChainId].useRelayer,
       requestContext,
     );
     logger.info("Sent receiver prepare router contract tx", requestContext, methodContext, {
